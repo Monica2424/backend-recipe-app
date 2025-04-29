@@ -5,32 +5,39 @@ import recipeRoutes from './routes/recipeRoutes';
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import path from "path";
+import http from 'http';
+import { setupWebSocket } from "./config/wsServer";
+import userRoutes from './routes/userRoutes';
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
-// Servește fișierul Swagger JSON
+// Swagger
 const swaggerDocument = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'config', 'swagger.json'), 'utf-8')
 );
-
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// API routes
+// Routes
 app.use('/api/recipes', recipeRoutes);
+app.use('/api/users', userRoutes);
 
-// Home route
+// Root
 app.get("/", (req, res) => {
   res.send("✅ Backend Recipe Generator funcționează!");
 });
 
+// WebSocket
+setupWebSocket(server);
+
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Serverul rulează pe http://localhost:${PORT}`);
-  console.log(`📚 Documentația API: http://localhost:${PORT}/api-docs`);
+server.listen(PORT, () => {
+  console.log(`🚀 HTTP + WS server rulează pe http://localhost:${PORT}`);
 });
