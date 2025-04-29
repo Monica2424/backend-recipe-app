@@ -12,3 +12,33 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  username  String
+  role      String   @default("user") // Default value is 'user'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Recipe    Recipe[]
+}
+
+model Recipe {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  image        String?
+  ingredients  String // Salvat ca JSON string sau text lung
+  instructions String? // Modul de preparare
+  prepTime     Int? // Timp de pregatire in minute
+  cookTime     Int? // Timp de gatire in minute
+  servings     Int? // Numar portii
+  recipeType   String // Mic-dejun, pranz, cina, desert, bautura, etc.
+  cuisineType  String // Romanian, American, Asian, etc.
+  source       String // "user" sau "api"
+  userId       Int?
+  user         User?    @relation(fields: [userId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
