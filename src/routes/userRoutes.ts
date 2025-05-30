@@ -15,7 +15,7 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || '';
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-// ✅ Register route
+// Register route
 router.post('/register', async (req: Request, res: Response): Promise<Response> => {
   const { email, username, password } = req.body;
 
@@ -48,7 +48,7 @@ router.post('/register', async (req: Request, res: Response): Promise<Response> 
   }
 });
 
-// ✅ Login route
+// Login route
 router.post('/login', async (req: Request, res: Response): Promise<Response> => {
   const { email, password } = req.body;
 
@@ -77,8 +77,6 @@ router.post('/login', async (req: Request, res: Response): Promise<Response> => 
   }
 });
 
-// ✅ Google Login (token-based, frontend)
-// ✅ Google Login - acceptă access_token în loc de id_token
 router.post('/google-login', async (req: Request, res: Response): Promise<Response> => {
     const { token: accessToken } = req.body;
   
@@ -87,7 +85,6 @@ router.post('/google-login', async (req: Request, res: Response): Promise<Respon
     }
   
     try {
-      // Obține profilul utilizatorului de la Google
       const { data } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -100,7 +97,6 @@ router.post('/google-login', async (req: Request, res: Response): Promise<Respon
         return res.status(400).json({ message: 'Email not found in Google profile' });
       }
   
-      // Caută sau creează utilizatorul în baza de date
       let user = await prisma.user.findUnique({ where: { email } });
   
       if (!user) {
@@ -108,7 +104,7 @@ router.post('/google-login', async (req: Request, res: Response): Promise<Respon
           data: {
             email,
             username: name || email.split('@')[0],
-            password: "", // userii Google nu au parolă
+            password: "", 
           },
         });
       }
@@ -126,7 +122,6 @@ router.post('/google-login', async (req: Request, res: Response): Promise<Respon
   });
   
 
-// ✅ Google OAuth Redirect Flow (backend-based)
 router.get('/auth/google', (req, res) => {
   const redirectUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=openid%20email%20profile&access_type=offline`;
   res.redirect(redirectUrl);
@@ -177,7 +172,6 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
 
     const jwtToken = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
 
-    // Redirect către frontend cu tokenul
     res.redirect(`http://localhost:5173?token=${jwtToken}`);
   } catch (error) {
     console.error(error);

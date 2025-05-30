@@ -4,6 +4,26 @@ import { PrismaClient } from '@prisma/client';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// GET /api/recipes/:id - obține o rețetă după ID
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!recipe) {
+      return res.status(404).json({ error: 'Rețeta nu a fost găsită' });
+    }
+
+    res.json(recipe);
+  } catch (error) {
+    console.error('Eroare la preluarea rețetei:', error);
+    res.status(500).json({ error: 'Eroare la server' });
+  }
+});
+
 // Ruta pentru preluarea tuturor rețetelor
 router.get('/', async (req, res) => {
   try {

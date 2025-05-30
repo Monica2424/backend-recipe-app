@@ -11,6 +11,58 @@
     }
   ],
   "paths": {
+    "/api/recipes/{id}": {
+  "get": {
+    "summary": "Preia o rețetă după ID",
+    "description": "Returnează detaliile unei rețete specifice, pe baza ID-ului.",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "schema": {
+          "type": "integer"
+        },
+        "description": "ID-ul rețetei"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Detaliile rețetei",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer" },
+                "title": { "type": "string" },
+                "description": { "type": "string" },
+                "image": { "type": "string" },
+                "ingredients": { "type": "string" },
+                "instructions": { "type": "string" },
+                "prepTime": { "type": "integer" },
+                "cookTime": { "type": "integer" },
+                "servings": { "type": "integer" },
+                "recipeType": { "type": "string" },
+                "cuisineType": { "type": "string" },
+                "source": { "type": "string" },
+                "userId": { "type": "integer", "nullable": true },
+                "createdAt": { "type": "string", "format": "date-time" },
+                "updatedAt": { "type": "string", "format": "date-time" }
+              }
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Rețetă negăsită"
+      },
+      "500": {
+        "description": "Eroare server"
+      }
+    }
+  }
+},
     "/api/recipes": {
       "get": {
         "summary": "Preia toate rețetele",
