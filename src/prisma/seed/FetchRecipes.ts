@@ -1,7 +1,6 @@
 import axios from 'axios';
 import generateDescription from './generateDescription';
 
-
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY!;
 
 export const categories = [
@@ -31,12 +30,24 @@ export async function FetchRecipes(tag: string, recipeType: string) {
       recipe.extendedIngredients?.length &&
       recipe.instructions
     )
-    .slice(0, 20);
+    .slice(0, 50);
+
+  // Mapă pentru imagine pentru fiecare bucătărie (primul întâlnit)
+  const cuisineImageMap = new Map<string, string>();
+
+  validRecipes.forEach((recipe: { cuisines: string | any[]; image: string; }) => {
+    const cuisineName = recipe.cuisines.length > 0 ? recipe.cuisines[0] : "Unknown";
+    if (!cuisineImageMap.has(cuisineName)) {
+      cuisineImageMap.set(cuisineName, recipe.image);
+    }
+  });
 
   const finalRecipes = await Promise.all(
     validRecipes.map(async (recipe: any) => {
       const ingredients = recipe.extendedIngredients.map((ing: any) => ing.original);
       const generatedDescription = await generateDescription(ingredients);
+
+      const cuisineName = recipe.cuisines.length > 0 ? recipe.cuisines[0] : "Unknown";
 
       return {
         title: recipe.title,
@@ -48,11 +59,11 @@ export async function FetchRecipes(tag: string, recipeType: string) {
         cookTime: recipe.cookingMinutes || 15,
         servings: recipe.servings || 2,
         recipeType: recipeType,
-        cuisineType: recipe.cuisines.length > 0 ? recipe.cuisines[0] : "Unknown",
+        cuisineName,    // lăsăm numele bucătăriei, vom folosi în seed
         source: "api",
       };
     })
   );
 
-  return finalRecipes;
+  return { finalRecipes, cuisineImageMap };
 }

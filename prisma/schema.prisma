@@ -24,21 +24,31 @@ model User {
   Recipe    Recipe[]
 }
 
+model Cuisine {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String
+  image       String
+  recipes     Recipe[]
+}
+
 model Recipe {
   id           Int      @id @default(autoincrement())
   title        String
   description  String?
-  image        String?
-  ingredients  String // Salvat ca JSON string sau text lung
-  instructions String? // Modul de preparare
-  prepTime     Int? // Timp de pregatire in minute
-  cookTime     Int? // Timp de gatire in minute
-  servings     Int? // Numar portii
-  recipeType   String // Mic-dejun, pranz, cina, desert, bautura, etc.
-  cuisineType  String // Romanian, American, Asian, etc.
-  source       String // "user" sau "api"
+  image        String
+  ingredients  String
+  instructions String?
+  prepTime     Int?
+  cookTime     Int?
+  servings     Int?
+  recipeType   String
+  cuisineId    Int
+  cuisine      Cuisine  @relation(fields: [cuisineId], references: [id])
+  source       String
   userId       Int?
   user         User?    @relation(fields: [userId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+

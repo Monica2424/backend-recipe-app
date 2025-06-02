@@ -11,58 +11,61 @@
     }
   ],
   "paths": {
-    "/api/recipes/{id}": {
-  "get": {
-    "summary": "Preia o rețetă după ID",
-    "description": "Returnează detaliile unei rețete specifice, pe baza ID-ului.",
-    "parameters": [
-      {
-        "in": "path",
-        "name": "id",
-        "required": true,
-        "schema": {
-          "type": "integer"
-        },
-        "description": "ID-ul rețetei"
-      }
-    ],
-    "responses": {
-      "200": {
-        "description": "Detaliile rețetei",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "id": { "type": "integer" },
-                "title": { "type": "string" },
-                "description": { "type": "string" },
-                "image": { "type": "string" },
-                "ingredients": { "type": "string" },
-                "instructions": { "type": "string" },
-                "prepTime": { "type": "integer" },
-                "cookTime": { "type": "integer" },
-                "servings": { "type": "integer" },
-                "recipeType": { "type": "string" },
-                "cuisineType": { "type": "string" },
-                "source": { "type": "string" },
-                "userId": { "type": "integer", "nullable": true },
-                "createdAt": { "type": "string", "format": "date-time" },
-                "updatedAt": { "type": "string", "format": "date-time" }
+  "/api/recipes/{id}": {
+    "get": {
+      "summary": "Preia o rețetă după ID",
+      "description": "Returnează detaliile unei rețete specifice, pe baza ID-ului.",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": { "type": "integer" },
+          "description": "ID-ul rețetei"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Detaliile rețetei",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "image": { "type": "string" },
+                  "ingredients": { "type": "string" },
+                  "instructions": { "type": "string" },
+                  "prepTime": { "type": "integer" },
+                  "cookTime": { "type": "integer" },
+                  "servings": { "type": "integer" },
+                  "recipeType": { "type": "string" },
+                  "cuisine": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "name": { "type": "string" },
+                      "description": { "type": "string" },
+                      "image": { "type": "string" }
+                    }
+                  },
+                  "source": { "type": "string" },
+                  "userId": { "type": "integer", "nullable": true },
+                  "createdAt": { "type": "string", "format": "date-time" },
+                  "updatedAt": { "type": "string", "format": "date-time" }
+                }
               }
             }
           }
-        }
-      },
-      "404": {
-        "description": "Rețetă negăsită"
-      },
-      "500": {
-        "description": "Eroare server"
+        },
+        "404": { "description": "Rețetă negăsită" },
+        "500": { "description": "Eroare server" }
       }
     }
-  }
-},
+  },
+
     "/api/recipes": {
       "get": {
         "summary": "Preia toate rețetele",
@@ -116,38 +119,102 @@
         }
       }
     },
-    "/api/recipes/cuisine/{cuisine}": {
-      "get": {
-        "summary": "Preia rețetele după bucătărie",
-        "description": "Filtrarea rețetelor în funcție de tipul de bucătărie",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "cuisine",
-            "required": true,
+    "/api/recipes/cuisines": {
+  "get": {
+    "summary": "Preia toate bucătăriile",
+    "description": "Preia lista tuturor bucătăriilor din baza de date",
+    "responses": {
+      "200": {
+        "description": "Lista tuturor bucătăriilor",
+        "content": {
+          "application/json": {
             "schema": {
-              "type": "string"
-            },
-            "description": "Tipul bucătăriei (ex: romanian, italian, american)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista rețetelor după tipul de bucătărie",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "example": "Italian"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Traditional Italian cuisine with rich flavors."
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "url",
+                    "example": "http://localhost:5000/images/italian.jpg"
                   }
+                },
+                "required": ["id", "name", "description", "image"]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+    "/api/recipes/cuisine/{cuisine}": {
+  "get": {
+    "summary": "Preia rețetele după bucătărie",
+    "description": "Filtrarea rețetelor în funcție de tipul de bucătărie",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "cuisine",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Tipul bucătăriei (ex: romanian, italian, american)"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Lista rețetelor după tipul de bucătărie",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "image": { "type": "string" },
+                  "ingredients": { "type": "string" },
+                  "instructions": { "type": "string" },
+                  "prepTime": { "type": "integer" },
+                  "cookTime": { "type": "integer" },
+                  "servings": { "type": "integer" },
+                  "recipeType": { "type": "string" },
+                  "cuisine": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "name": { "type": "string" },
+                      "description": { "type": "string" },
+                      "image": { "type": "string" }
+                    }
+                  },
+                  "source": { "type": "string" },
+                  "userId": { "type": "integer", "nullable": true },
+                  "createdAt": { "type": "string", "format": "date-time" },
+                  "updatedAt": { "type": "string", "format": "date-time" }
                 }
               }
             }
           }
         }
       }
-    },
+    }
+  }
+},
     "/api/users/register": {
       "post": {
         "summary": "Înregistrează un utilizator nou",
