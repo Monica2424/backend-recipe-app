@@ -14,14 +14,19 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String?
-  username  String
-  role      String   @default("user")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Recipe    Recipe[]
+  id            Int           @id @default(autoincrement())
+  email         String        @unique
+  password      String?
+  username      String
+  role          String        @default("user")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  recipes       Recipe[]
+  reviews       Review[]
+  favorites     Favorite[]
+  followers     Follow[]      @relation("Followers")
+  following     Follow[]      @relation("Following")
+  notifications Notification[]
 }
 
 model Cuisine {
@@ -33,22 +38,70 @@ model Cuisine {
 }
 
 model Recipe {
+  id             Int      @id @default(autoincrement())
+  title          String
+  description    String?
+  image          String
+  ingredients    String
+  instructions   String?
+  prepTime       Int?
+  cookTime       Int?
+  servings       Int?
+  recipeType     String
+  cuisineId      Int
+  cuisine        Cuisine  @relation(fields: [cuisineId], references: [id])
+  source         String
+  userId         Int?
+  user           User?    @relation(fields: [userId], references: [id])
+  isAIGenerated  Boolean  @default(false)
+  isPrivate      Boolean  @default(false) // rețetele generate pe baza ingredientelor, vizibile doar creatorului
+  reviews        Review[]
+  favorites      Favorite[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int      // valoare de la 1 la 5
+  comment   String?
+  userId    Int
+  recipeId  Int
+  user      User     @relation(fields: [userId], references: [id])
+  recipe    Recipe   @relation(fields: [recipeId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
+}
+
+model Favorite {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  recipeId  Int
+  user      User   @relation(fields: [userId], references: [id])
+  recipe    Recipe @relation(fields: [recipeId], references: [id])
+
+  @@unique([userId, recipeId])
+}
+
+model Follow {
   id           Int      @id @default(autoincrement())
-  title        String
-  description  String?
-  image        String
-  ingredients  String
-  instructions String?
-  prepTime     Int?
-  cookTime     Int?
-  servings     Int?
-  recipeType   String
-  cuisineId    Int
-  cuisine      Cuisine  @relation(fields: [cuisineId], references: [id])
-  source       String
-  userId       Int?
-  user         User?    @relation(fields: [userId], references: [id])
+  followerId   Int
+  followingId  Int
+  follower     User     @relation("Following", fields: [followerId], references: [id])
+  following    User     @relation("Followers", fields: [followingId], references: [id])
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+
+  @@unique([followerId, followingId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  link      String?  // ex: "/recipes/123" – pentru a redirecționa către resursa relevantă
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
