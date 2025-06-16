@@ -9,6 +9,8 @@ import http from 'http';
 import { setupWebSocket } from "./config/wsServer";
 import userRoutes from './routes/userRoutes';
 import interactionRoutes from './routes/interactionRoutes';
+import aiRoutes from './routes/aiRoutes';
+
 
 dotenv.config();
 
@@ -30,6 +32,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/interactions', interactionRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Root
 app.get("/", (req, res) => {
