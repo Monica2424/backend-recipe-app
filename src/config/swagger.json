@@ -372,7 +372,53 @@
       }
     }
   }
-}
+},"/api/recipes/search-image/{recipeName}/{cuisineName}": {
+      "get": {
+        "summary": "Search image for recipe and cuisine",
+        "parameters": [
+          {
+            "name": "recipeName",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Name of the recipe"
+          },
+          {
+            "name": "cuisineName",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Name of the cuisine"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns image URL for the recipe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "image": { "type": "string", "format": "uri" }
+                  }
+                },
+                "examples": {
+                  "placeholder": {
+                    "summary": "Example response",
+                    "value": {
+                      "image": "https://via.placeholder.com/400x300/f0f0f0/666666?text=Example"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Endpoint not found"
+          }
+        }
+      }
+    }
 
   }
 }
