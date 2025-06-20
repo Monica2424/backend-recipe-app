@@ -57,8 +57,6 @@ router.post('/generate-cuisine-description', async (req, res) => {
 });
 
 router.post('/clarifai-food', async (req, res) => {
-    console.log('Received request body:', req.body);
-
     try {
         // Accept both 'image' and 'imageBase64' for flexibility
         let imageBase64 = req.body.imageBase64 || req.body.image;
@@ -69,8 +67,6 @@ router.post('/clarifai-food', async (req, res) => {
 
         // elimină prefixul dacă există
         imageBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-
-        console.log('Calling Clarifai API...');
 
         const clarifaiResponse = await axios.post(
             `https://api.clarifai.com/v2/workflows/food/results`,
@@ -132,19 +128,13 @@ router.post('/clarifai-food', async (req, res) => {
 
 //generare meniu sau reteta
 router.post('/generate-ai', async (req, res) => {
-    console.log('--- /generate-ai called ---');
-    console.log('Request body:', req.body);
     const { ingredients, type } = req.body;
 
     if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
-        console.log('Validation failed: ingredients missing or invalid');
-
         return res.status(400).json({ message: 'Ingredient list is required.' });
     }
 
     if (!type || !['menu', 'recipe'].includes(type)) {
-        console.log('Validation failed: invalid type:', type);
-
         return res.status(400).json({ message: 'Invalid generation type.' });
     }
 
@@ -156,18 +146,14 @@ router.post('/generate-ai', async (req, res) => {
     }
 
     try {
-        console.log('Fetching cuisines...');
-
         // Get all cuisines from database
         const cuisinesResponse = await fetch(`${req.protocol}://${req.get('host')}/api/recipes/cuisines`);
-        console.log('Cuisines response status:', cuisinesResponse.status);
 
         if (!cuisinesResponse.ok) {
             return res.status(500).json({ message: 'Failed to fetch cuisines.' });
         }
 
         const cuisines = await cuisinesResponse.json();
-        console.log('Fetched cuisines:', cuisines);
 
         const cuisineList = cuisines.map((c: Cuisine) => `ID: ${c.id}, Name: "${c.name}", Description: "${c.description || 'No description'}"`).join('\n');
 
@@ -253,9 +239,6 @@ The "cuisineId" and "cuisineName" must match exactly one cuisine from the list a
   ]
 }`;
         }
-
-        console.log('Sending prompt to Groq API...');
-
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -278,7 +261,6 @@ The "cuisineId" and "cuisineName" must match exactly one cuisine from the list a
                 max_tokens: 2000
             })
         });
-        console.log('Groq API response status:', response.status);
 
         if (!response.ok) {
             throw new Error(`Groq API error! status: ${response.status}`);
@@ -286,9 +268,6 @@ The "cuisineId" and "cuisineName" must match exactly one cuisine from the list a
 
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content;
-
-        console.log('RAW AI RESPONSE:', data);
-        console.log('TEXT CONTENT:', content);
 
         let parsed;
         try {
@@ -303,8 +282,6 @@ The "cuisineId" and "cuisineName" must match exactly one cuisine from the list a
                 throw new SyntaxError('Could not extract valid JSON from AI response.');
             }
         }
-        console.log('Parsed AI response:', parsed);
-
         // Validate that the chosen cuisine exists
         const chosenCuisine = cuisines.find((c: Cuisine) => c.id === parsed.cuisineId);
         if (!chosenCuisine) {
@@ -313,8 +290,6 @@ The "cuisineId" and "cuisineName" must match exactly one cuisine from the list a
 
         // Add images to each recipe/menu item
         if (type === 'menu') {
-            console.log('Generating images for menu items...');
-
             // Generate images for each meal
             const breakfastImageResponse = await fetch(`${req.protocol}://${req.get('host')}/api/ai/search-image/${encodeURIComponent(parsed.breakfast.title)}/${encodeURIComponent(parsed.cuisineName)}`);
             const breakfastImageData = await breakfastImageResponse.json();
@@ -337,16 +312,13 @@ The "cuisineId" and "cuisineName" must match exactly one cuisine from the list a
             parsed.dinner.cuisineName = parsed.cuisineName;
             parsed.dinner.image = dinnerImageData.image;
         } else {
-            console.log('Generating images for recipes...');
 
             // Generate images for each recipe
             for (let i = 0; i < parsed.recipes.length; i++) {
                 const recipe = parsed.recipes[i];
                 const imageResponse = await fetch(`${req.protocol}://${req.get('host')}/api/ai/search-image/${encodeURIComponent(recipe.title)}/${encodeURIComponent(parsed.cuisineName)}`);
-                console.log(`Image fetch for recipe "${recipe.title}" response status:`, imageResponse.status);
 
                 const text = await imageResponse.text(); // citește ca text
-                console.log(`Image fetch response text for "${recipe.title}":`, text);
 
                 let imageData;
                 try {
@@ -361,7 +333,6 @@ The "cuisineId" and "cuisineName" must match exactly one cuisine from the list a
                 recipe.image = imageData.image;
             }
         }
-        console.log('Sending response to client...');
 
         res.status(200).json(parsed);
 

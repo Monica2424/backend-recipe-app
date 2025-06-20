@@ -5,7 +5,28 @@ import { generateCuisineDescription } from '../prisma/seed/seedHelpers';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Endpoint pentru sortare după timp total (prepTime + cookTime)
+router.get('/sorted', async (req, res) => {
+  try {
+    const recipes = await prisma.recipe.findMany({
+      include: {
+        cuisine: true,
+      }
+    });
 
+    // Sortează manual după timpul total (prepTime + cookTime)
+    const sortedRecipes = recipes.sort((a, b) => {
+      const totalTimeA = (a.prepTime || 0) + (a.cookTime || 0);
+      const totalTimeB = (b.prepTime || 0) + (b.cookTime || 0);
+      return totalTimeA - totalTimeB;
+    });
+
+    res.json(sortedRecipes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Eroare la sortarea rețetelor.' });
+  }
+});
 // Ruta pentru preluarea tuturor bucatariilor
 router.get('/cuisines', async (req, res) => {
   try {
@@ -70,27 +91,6 @@ router.get('/type/:type', async (req, res) => {
   }
 });
 
-// GET /api/recipes/:id - obține o rețetă după ID
-router.get('/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const recipe = await prisma.recipe.findUnique({
-      where: { id: parseInt(id) },
-      include: { cuisine: true },
-    });
-
-    if (!recipe) {
-      return res.status(404).json({ error: 'Rețeta nu a fost găsită' });
-    }
-
-    res.json(recipe);
-  } catch (error) {
-    console.error('Eroare la preluarea rețetei:', error);
-    res.status(500).json({ error: 'Eroare la server' });
-  }
-});
-
 
 // GET /api/recipes/user/:userId - obține rețetele adăugate de utilizator
 router.get('/user/:userId', async (req, res) => {
@@ -146,73 +146,6 @@ router.get('/ai/:userId', async (req, res) => {
   }
 });
 
-
-// // POST /api/recipes/ai-generate - creează o rețetă AI
-// router.post('/ai-generate', async (req, res) => {
-//   try {
-//     const {
-//       title,
-//       description,
-//       ingredients,
-//       instructions,
-//       prepTime,
-//       cookTime,
-//       servings,
-//       cuisineName,
-//       userId,
-//       isPrivate = false
-//     } = req.body;
-
-//     if (!title || !ingredients || !userId) {
-//       return res.status(400).json({ error: 'Titlu, ingrediente și userId sunt obligatorii' });
-//     }
-
-//     // Gestionează bucătăria
-//     let cuisineId = 1; // default
-//     if (cuisineName) {
-//       const cuisine = await prisma.cuisine.findUnique({ where: { name: cuisineName } });
-
-//       if (!cuisine) {
-//         const description = await generateCuisineDescription(cuisineName);
-//         const newCuisine = await prisma.cuisine.create({
-//           data: {
-//             name: cuisineName,
-//             description,
-//             image: '',
-//           }
-//         });
-//         cuisineId = newCuisine.id;
-//       } else {
-//         cuisineId = cuisine.id;
-//       }
-//     }
-
-//     const aiRecipe = await prisma.recipe.create({
-//       data: {
-//         title,
-//         description: description || `Rețetă generată cu AI: ${title}`,
-//         image: '/img/ai-recipe-default.jpg', // imagine default pentru rețete AI
-//         ingredients,
-//         instructions: instructions || '',
-//         prepTime: prepTime || 30,
-//         cookTime: cookTime || 30,
-//         servings: servings || 4,
-//         recipeType: 'AI Generated',
-//         cuisineId,
-//         source: 'AI Generated',
-//         userId,
-//         isAIGenerated: true,
-//         isPrivate
-//       },
-//       include: { cuisine: true }
-//     });
-
-//     res.status(201).json(aiRecipe);
-//   } catch (error) {
-//     console.error('Eroare la crearea rețetei AI:', error);
-//     res.status(500).json({ error: 'Eroare la server' });
-//   }
-// });
 
 router.post('/cuisines', async (req, res) => {
   const { name, description, image } = req.body;
@@ -353,9 +286,6 @@ router.delete('/:id', async (req, res) => {
 // PATCH /api/recipes/:id - actualizează o rețetă existentă
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
-  console.log("=== BACKEND UPDATE RECIPE ===");
-    console.log("Recipe ID from params:", id);
-    console.log("Request body:", req.body);
   const {
     title,
     description,
@@ -377,8 +307,6 @@ router.patch('/:id', async (req, res) => {
             where: { id: parseInt(id) },
             include: { cuisine: true }
         });
-        
-        console.log("Existing recipe:", existingRecipe);
         
         if (!existingRecipe) {
             return res.status(404).json({ error: 'Rețeta nu a fost găsită' });
@@ -403,12 +331,65 @@ router.patch('/:id', async (req, res) => {
         isPrivate,
       },
     });
-            console.log("Update data:", updatedRecipe);
-
 
     res.json(updatedRecipe);
   } catch (error) {
     console.error('Eroare la actualizarea rețetei:', error);
+    res.status(500).json({ error: 'Eroare la server' });
+  }
+});
+
+// Endpoint pentru căutare după nume sau tip de rețetă
+router.get('/search/:query', async (req, res) => {
+  const { query } = req.params;
+
+  try {
+    const recipes = await prisma.recipe.findMany({
+      where: {
+        OR: [
+          {
+            title: {
+              contains: query,
+              mode: 'insensitive'
+            }
+          },
+          {
+            recipeType: {
+              contains: query,
+              mode: 'insensitive'
+            }
+          }
+        ]
+      },
+      include: {
+        cuisine: true,
+      }
+    });
+
+    res.json(recipes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Eroare la căutarea rețetelor.' });
+  }
+});
+
+// GET /api/recipes/:id - obține o rețetă după ID
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: parseInt(id) },
+      include: { cuisine: true },
+    });
+
+    if (!recipe) {
+      return res.status(404).json({ error: 'Rețeta nu a fost găsită' });
+    }
+
+    res.json(recipe);
+  } catch (error) {
+    console.error('Eroare la preluarea rețetei:', error);
     res.status(500).json({ error: 'Eroare la server' });
   }
 });

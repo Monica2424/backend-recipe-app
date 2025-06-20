@@ -4,11 +4,11 @@ import generateDescription from './generateDescription';
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY!;
 
 export const categories = [
-  { tag: "dessert", recipeType: "desert" },
-  { tag: "breakfast", recipeType: "mic-dejun" },
-  { tag: "main course", recipeType: "pranz" },
-  { tag: "dinner", recipeType: "cina" },
-  { tag: "beverage", recipeType: "bauturi" },
+  { tag: "dessert", recipeType: "dessert" },
+  { tag: "breakfast", recipeType: "breakfast" },
+  { tag: "main course", recipeType: "main" },
+  { tag: "dinner", recipeType: "dinner" },
+  { tag: "beverage", recipeType: "beverage" },
 ];
 
 export async function FetchRecipes(tag: string, recipeType: string) {
