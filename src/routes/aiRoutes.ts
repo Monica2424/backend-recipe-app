@@ -58,16 +58,12 @@ router.post('/generate-cuisine-description', async (req, res) => {
 
 router.post('/clarifai-food', async (req, res) => {
     try {
-        // Accept both 'image' and 'imageBase64' for flexibility
         let imageBase64 = req.body.imageBase64 || req.body.image;
 
         if (!imageBase64) {
             return res.status(400).json({ error: 'No imageBase64 or image provided' });
         }
-
-        // elimină prefixul dacă există
         imageBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-
         const clarifaiResponse = await axios.post(
             `https://api.clarifai.com/v2/workflows/food/results`,
             {
@@ -89,7 +85,6 @@ router.post('/clarifai-food', async (req, res) => {
                 timeout: 15000,
             }
         );
-
         if (
             !clarifaiResponse.data.results ||
             !clarifaiResponse.data.results[0] ||
@@ -98,7 +93,6 @@ router.post('/clarifai-food', async (req, res) => {
         ) {
             return res.status(500).json({ error: 'Clarifai nu a returnat outputs.' });
         }
-
         const concepts = clarifaiResponse.data.results[0].outputs[0].data.concepts;
 
         if (!concepts || concepts.length === 0) {
@@ -129,34 +123,25 @@ router.post('/clarifai-food', async (req, res) => {
 //generare meniu sau reteta
 router.post('/generate-ai', async (req, res) => {
     const { ingredients, type } = req.body;
-
     if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
         return res.status(400).json({ message: 'Ingredient list is required.' });
     }
-
     if (!type || !['menu', 'recipe'].includes(type)) {
         return res.status(400).json({ message: 'Invalid generation type.' });
     }
-
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
     if (!GROQ_API_KEY) {
         console.error('Groq API key is not configured.');
 
         return res.status(500).json({ message: 'Groq API key is not configured.' });
     }
-
     try {
-        // Get all cuisines from database
         const cuisinesResponse = await fetch(`${req.protocol}://${req.get('host')}/api/recipes/cuisines`);
-
         if (!cuisinesResponse.ok) {
             return res.status(500).json({ message: 'Failed to fetch cuisines.' });
         }
-
         const cuisines = await cuisinesResponse.json();
-
         const cuisineList = cuisines.map((c: Cuisine) => `ID: ${c.id}, Name: "${c.name}", Description: "${c.description || 'No description'}"`).join('\n');
-
         let prompt;
         if (type === 'menu') {
             prompt = `You must generate a full daily menu (breakfast, lunch, dinner) using ONLY the following ingredients: ${ingredients.join(', ')}.

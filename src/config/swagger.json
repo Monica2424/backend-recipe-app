@@ -10,62 +10,67 @@
       "url": "http://localhost:5000"
     }
   ],
-  "paths": {
-  "/api/recipes/{id}": {
-    "get": {
-      "summary": "Preia o rețetă după ID",
-      "description": "Returnează detaliile unei rețete specifice, pe baza ID-ului.",
-      "parameters": [
-        {
-          "in": "path",
-          "name": "id",
-          "required": true,
-          "schema": { "type": "integer" },
-          "description": "ID-ul rețetei"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "Detaliile rețetei",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "id": { "type": "integer" },
-                  "title": { "type": "string" },
-                  "description": { "type": "string" },
-                  "image": { "type": "string" },
-                  "ingredients": { "type": "string" },
-                  "instructions": { "type": "string" },
-                  "prepTime": { "type": "integer" },
-                  "cookTime": { "type": "integer" },
-                  "servings": { "type": "integer" },
-                  "recipeType": { "type": "string" },
-                  "cuisine": {
-                    "type": "object",
-                    "properties": {
-                      "id": { "type": "integer" },
-                      "name": { "type": "string" },
-                      "description": { "type": "string" },
-                      "image": { "type": "string" }
-                    }
-                  },
-                  "source": { "type": "string" },
-                  "userId": { "type": "integer", "nullable": true },
-                  "createdAt": { "type": "string", "format": "date-time" },
-                  "updatedAt": { "type": "string", "format": "date-time" }
-                }
-              }
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Recipe": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "image": { "type": "string" },
+          "ingredients": { "type": "string" },
+          "instructions": { "type": "string" },
+          "prepTime": { "type": "integer" },
+          "cookTime": { "type": "integer" },
+          "servings": { "type": "integer" },
+          "recipeType": { "type": "string" },
+          "cuisine": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "image": { "type": "string" }
             }
-          }
-        },
-        "404": { "description": "Rețetă negăsită" },
-        "500": { "description": "Eroare server" }
+          },
+          "source": { "type": "string" },
+          "userId": { "type": "integer", "nullable": true },
+          "isAIGenerated": { "type": "boolean" },
+          "isPrivate": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Cuisine": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "image": { "type": "string" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "email": { "type": "string" },
+          "username": { "type": "string" },
+          "role": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
       }
     }
   },
-
+  "paths": {
     "/api/recipes": {
       "get": {
         "summary": "Preia toate rețetele",
@@ -77,13 +82,176 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
+                  "items": { "$ref": "#/components/schemas/Recipe" }
                 }
               }
             }
           }
+        }
+      },
+      "post": {
+        "summary": "Adaugă o rețetă nouă",
+        "description": "Creează o rețetă nouă în baza de date",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "image": { "type": "string" },
+                  "ingredients": { "type": "string" },
+                  "instructions": { "type": "string" },
+                  "prepTime": { "type": "integer" },
+                  "cookTime": { "type": "integer" },
+                  "servings": { "type": "integer" },
+                  "recipeType": { "type": "string" },
+                  "cuisineId": { "type": "integer" },
+                  "source": { "type": "string" },
+                  "userId": { "type": "integer", "nullable": true },
+                  "isAIGenerated": { "type": "boolean" },
+                  "isPrivate": { "type": "boolean" }
+                },
+                "required": ["title", "description", "ingredients", "instructions", "cuisineId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rețeta a fost creată cu succes",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Recipe" }
+              }
+            }
+          },
+          "400": { "description": "Date invalide" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/recipes/{id}": {
+      "get": {
+        "summary": "Preia o rețetă după ID",
+        "description": "Returnează detaliile unei rețete specifice, pe baza ID-ului.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul rețetei"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detaliile rețetei",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Recipe" }
+              }
+            }
+          },
+          "404": { "description": "Rețetă negăsită" },
+          "500": { "description": "Eroare server" }
+        }
+      },
+      "patch": {
+        "summary": "Actualizează o rețetă existentă",
+        "description": "Actualizează parțial o rețetă existentă",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul rețetei"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "image": { "type": "string" },
+                  "ingredients": { "type": "string" },
+                  "instructions": { "type": "string" },
+                  "prepTime": { "type": "integer" },
+                  "cookTime": { "type": "integer" },
+                  "servings": { "type": "integer" },
+                  "recipeType": { "type": "string" },
+                  "cuisineId": { "type": "integer" },
+                  "source": { "type": "string" },
+                  "isPrivate": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rețeta a fost actualizată cu succes",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Recipe" }
+              }
+            }
+          },
+          "404": { "description": "Rețetă negăsită" },
+          "500": { "description": "Eroare server" }
+        }
+      },
+      "delete": {
+        "summary": "Șterge o rețetă",
+        "description": "Șterge o rețetă din baza de date",
+        "parameters": [
+  {
+    "in": "path",
+    "name": "id",
+    "required": true,
+    "schema": { "type": "integer" },
+    "description": "ID-ul rețetei"
+  },
+  {
+    "in": "query",
+    "name": "userId",
+    "required": true,
+    "schema": { "type": "integer" },
+    "description": "ID-ul utilizatorului care șterge rețeta"
+  }
+],
+        "responses": {
+          "200": { "description": "Rețeta a fost ștearsă cu succes" },
+          "403": { "description": "Nu ai permisiunea să ștergi această rețetă" },
+          "404": { "description": "Rețetă negăsită" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/recipes/sorted": {
+      "get": {
+        "summary": "Preia rețetele sortate după timpul total",
+        "description": "Returnează rețetele sortate după timpul total (prepTime + cookTime)",
+        "responses": {
+          "200": {
+            "description": "Lista rețetelor sortate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Recipe" }
+                }
+              }
+            }
+          },
+          "500": { "description": "Eroare server" }
         }
       }
     },
@@ -96,9 +264,7 @@
             "in": "path",
             "name": "type",
             "required": true,
-            "schema": {
-              "type": "string"
-            },
+            "schema": { "type": "string" },
             "description": "Tipul rețetei (ex: mic-dejun, prânz, etc.)"
           }
         ],
@@ -109,9 +275,7 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
+                  "items": { "$ref": "#/components/schemas/Recipe" }
                 }
               }
             }
@@ -119,106 +283,114 @@
         }
       }
     },
-    "/api/recipes/cuisines": {
-  "get": {
-    "summary": "Preia toate bucătăriile",
-    "description": "Preia lista tuturor bucătăriilor din baza de date",
-    "responses": {
-      "200": {
-        "description": "Lista tuturor bucătăriilor",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "integer",
-                    "example": 1
-                  },
-                  "name": {
-                    "type": "string",
-                    "example": "Italian"
-                  },
-                  "description": {
-                    "type": "string",
-                    "example": "Traditional Italian cuisine with rich flavors."
-                  },
-                  "image": {
-                    "type": "string",
-                    "format": "url",
-                    "example": "http://localhost:5000/images/italian.jpg"
-                  }
-                },
-                "required": ["id", "name", "description", "image"]
+    "/api/recipes/user/{userId}": {
+      "get": {
+        "summary": "Preia rețetele utilizatorului",
+        "description": "Obține rețetele adăugate de un utilizator specific (nu AI generate)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul utilizatorului"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista rețetelor utilizatorului",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Recipe" }
+                }
               }
             }
-          }
+          },
+          "500": { "description": "Eroare server" }
         }
       }
-    }
-  }
-},
-    "/api/recipes/cuisine/{cuisine}": {
-  "get": {
-    "summary": "Preia rețetele după bucătărie",
-    "description": "Filtrarea rețetelor în funcție de tipul de bucătărie",
-    "parameters": [
-      {
-        "in": "path",
-        "name": "cuisine",
-        "required": true,
-        "schema": { "type": "string" },
-        "description": "Tipul bucătăriei (ex: romanian, italian, american)"
+    },
+    "/api/recipes/ai/{userId}": {
+      "get": {
+        "summary": "Preia rețetele AI generate de utilizator",
+        "description": "Obține rețetele AI generate de un utilizator specific",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul utilizatorului"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista rețetelor AI generate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Recipe" }
+                }
+              }
+            }
+          },
+          "500": { "description": "Eroare server" }
+        }
       }
-    ],
-    "responses": {
-      "200": {
-        "description": "Lista rețetelor după tipul de bucătărie",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "id": { "type": "integer" },
-                  "title": { "type": "string" },
-                  "description": { "type": "string" },
-                  "image": { "type": "string" },
-                  "ingredients": { "type": "string" },
-                  "instructions": { "type": "string" },
-                  "prepTime": { "type": "integer" },
-                  "cookTime": { "type": "integer" },
-                  "servings": { "type": "integer" },
-                  "recipeType": { "type": "string" },
-                  "cuisine": {
-                    "type": "object",
-                    "properties": {
-                      "id": { "type": "integer" },
-                      "name": { "type": "string" },
-                      "description": { "type": "string" },
-                      "image": { "type": "string" }
-                    }
-                  },
-                  "source": { "type": "string" },
-                  "userId": { "type": "integer", "nullable": true },
-                  "createdAt": { "type": "string", "format": "date-time" },
-                  "updatedAt": { "type": "string", "format": "date-time" }
+    },
+    "/api/recipes/search/{query}": {
+      "get": {
+        "summary": "Căutare rețete",
+        "description": "Căutare rețete după nume sau tip",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Termenul de căutare"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista rețetelor găsite",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Recipe" }
+                }
+              }
+            }
+          },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/recipes/cuisines": {
+      "get": {
+        "summary": "Preia toate bucătăriile",
+        "description": "Preia lista tuturor bucătăriilor din baza de date",
+        "responses": {
+          "200": {
+            "description": "Lista tuturor bucătăriilor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Cuisine" }
                 }
               }
             }
           }
         }
-      }
-    }
-  }
-},
-    "/api/users/register": {
+      },
       "post": {
-        "summary": "Înregistrează un utilizator nou",
-        "description": "Permite crearea unui nou utilizator. Returnează un token JWT.",
+        "summary": "Adaugă o bucătărie nouă",
+        "description": "Creează o bucătărie nouă în baza de date",
         "requestBody": {
           "required": true,
           "content": {
@@ -226,54 +398,60 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": {
-                    "type": "string",
-                    "description": "Email-ul utilizatorului"
-                  },
-                  "username": {
-                    "type": "string",
-                    "description": "Numele de utilizator"
-                  },
-                  "password": {
-                    "type": "string",
-                    "description": "Parola utilizatorului"
-                  }
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "image": { "type": "string" }
                 },
-                "required": ["email", "username", "password"]
+                "required": ["name"]
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Utilizator înregistrat cu succes",
+            "description": "Bucătăria a fost creată cu succes",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string",
-                      "description": "Token-ul JWT al utilizatorului"
-                    }
-                  }
-                }
+                "schema": { "$ref": "#/components/schemas/Cuisine" }
               }
             }
           },
-          "400": {
-            "description": "Date incorecte sau lipsește un câmp necesar"
-          },
-          "500": {
-            "description": "Eroare server"
-          }
+          "500": { "description": "Eroare server" }
         }
       }
     },
-    "/api/users/login": {
-      "post": {
-        "summary": "Autentificare utilizator",
-        "description": "Permite autentificarea unui utilizator și returnează un token JWT.",
+    "/api/recipes/cuisines/{id}": {
+      "delete": {
+        "summary": "Șterge o bucătărie",
+        "description": "Șterge o bucătărie din baza de date",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul bucătăriei"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Bucătăria a fost ștearsă cu succes" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/recipes/cuisines/{id}/image": {
+      "patch": {
+        "summary": "Actualizează imaginea bucătăriei",
+        "description": "Actualizează imaginea unei bucătării existente",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul bucătăriei"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -281,98 +459,55 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": {
-                    "type": "string",
-                    "description": "Email-ul utilizatorului"
-                  },
-                  "password": {
-                    "type": "string",
-                    "description": "Parola utilizatorului"
-                  }
+                  "image": { "type": "string" }
                 },
-                "required": ["email", "password"]
+                "required": ["image"]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Autentificare cu succes",
+            "description": "Imaginea bucătăriei a fost actualizată cu succes",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Cuisine" }
+              }
+            }
+          },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/recipes/cuisine/{cuisine}": {
+      "get": {
+        "summary": "Preia rețetele după bucătărie",
+        "description": "Filtrarea rețetelor în funcție de tipul de bucătărie",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cuisine",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Tipul bucătăriei (ex: romanian, italian, american)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista rețetelor după tipul de bucătărie",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string",
-                      "description": "Token-ul JWT al utilizatorului"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Credentiale invalide"
-          },
-          "500": {
-            "description": "Eroare server"
-          }
-        }
-      }
-    },
-    "/api/users/auth/google/callback": {
-  "post": {
-    "summary": "Autentificare cu Google",
-    "description": "Primește tokenul de la Google și returnează un JWT pentru aplicație.",
-    "requestBody": {
-      "required": true,
-      "content": {
-        "application/json": {
-          "schema": {
-            "type": "object",
-            "properties": {
-              "token": {
-                "type": "string",
-                "description": "Tokenul ID primit de la Google"
-              }
-            },
-            "required": ["token"]
-          }
-        }
-      }
-    },
-    "responses": {
-      "200": {
-        "description": "Autentificare reușită",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "token": { "type": "string" },
-                "user": {
-                  "type": "object",
-                  "properties": {
-                    "id": { "type": "integer" },
-                    "username": { "type": "string" },
-                    "email": { "type": "string" }
-                  }
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Recipe" }
                 }
               }
             }
           }
         }
-      },
-      "400": {
-        "description": "Token lipsă sau invalid"
-      },
-      "500": {
-        "description": "Eroare server"
       }
-    }
-  }
-},"/api/recipes/search-image/{recipeName}/{cuisineName}": {
+    },
+    "/api/recipes/search-image/{recipeName}/{cuisineName}": {
       "get": {
         "summary": "Search image for recipe and cuisine",
         "parameters": [
@@ -413,12 +548,1435 @@
               }
             }
           },
-          "404": {
-            "description": "Endpoint not found"
+          "404": { "description": "Endpoint not found" }
+        }
+      }
+    },
+    "/api/users/register": {
+      "post": {
+        "summary": "Înregistrează un utilizator nou",
+        "description": "Permite crearea unui nou utilizator. Returnează un token JWT.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "description": "Email-ul utilizatorului" },
+                  "username": { "type": "string", "description": "Numele de utilizator" },
+                  "password": { "type": "string", "description": "Parola utilizatorului" }
+                },
+                "required": ["email", "username", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilizator înregistrat cu succes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string", "description": "Token-ul JWT al utilizatorului" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Date incorecte sau lipsește un câmp necesar" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/login": {
+      "post": {
+        "summary": "Autentificare utilizator",
+        "description": "Permite autentificarea unui utilizator și returnează un token JWT.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "description": "Email-ul utilizatorului" },
+                  "password": { "type": "string", "description": "Parola utilizatorului" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Autentificare cu succes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string", "description": "Token-ul JWT al utilizatorului" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Credentiale invalide" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/google-login": {
+      "post": {
+        "summary": "Autentificare cu Google",
+        "description": "Primește tokenul de la Google și returnează un JWT pentru aplicație.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": { "type": "string", "description": "Tokenul ID primit de la Google" }
+                },
+                "required": ["token"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Autentificare reușită",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "username": { "type": "string" },
+                        "email": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Token lipsă sau invalid" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/auth/google": {
+      "get": {
+        "summary": "Redirect pentru autentificare Google",
+        "description": "Redirectează utilizatorul către pagina de autentificare Google",
+        "responses": {
+          "302": { "description": "Redirect către Google OAuth" }
+        }
+      }
+    },
+    "/api/users/auth/google/callback": {
+      "get": {
+        "summary": "Callback pentru autentificare Google",
+        "description": "Procesează răspunsul de la Google și autentifică utilizatorul",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "code",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Codul de autorizare de la Google"
+          }
+        ],
+        "responses": {
+          "302": { "description": "Redirect către aplicație cu token JWT" },
+          "400": { "description": "Cod de autorizare lipsă" },
+          "500": { "description": "Eroare la autentificarea Google" }
+        }
+      }
+    },
+    "/api/users/update-username": {
+      "put": {
+        "summary": "Actualizează numele de utilizator",
+        "description": "Actualizează numele de utilizator pentru utilizatorul autentificat",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string", "minLength": 3, "maxLength": 50 }
+                },
+                "required": ["username"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Numele de utilizator a fost actualizat cu succes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Nume de utilizator invalid sau deja existent" },
+          "401": { "description": "Neautentificat" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/user-profile/{recipeId}": {
+      "get": {
+        "summary": "Obține profilul utilizatorului după ID-ul rețetei",
+        "description": "Returnează informații despre utilizatorul care a creat o rețetă specifică",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipeId",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul rețetei"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Informații despre utilizator",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": { "type": "integer" },
+                    "username": { "type": "string" },
+                    "recipeCount": { "type": "integer" },
+                    "followersCount": { "type": "integer" },
+                    "isSpoonacularRecipe": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Rețeta sau utilizatorul nu a fost găsit" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/recipe-author/{recipeId}": {
+      "get": {
+        "summary": "Obține inițialele autorului rețetei",
+        "description": "Returnează inițialele utilizatorului care a creat rețeta",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipeId",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul rețetei"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inițialele autorului",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "initials": { "type": "string" },
+                    "isUserRecipe": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Rețeta nu a fost găsită" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/delete-account": {
+      "delete": {
+        "summary": "Șterge contul utilizatorului",
+        "description": "Șterge complet contul utilizatorului autentificat și toate datele asociate",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Contul a fost șters cu succes" },
+          "401": { "description": "Neautentificat" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/profile": {
+      "get": {
+        "summary": "Obține informații despre utilizatorul curent",
+        "description": "Returnează informații despre utilizatorul autentificat",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Informații despre utilizator",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Neautentificat" },
+          "404": { "description": "Utilizatorul nu a fost găsit" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/user/{userId}": {
+      "get": {
+        "summary": "Obține utilizatorul după ID",
+        "description": "Returnează informații despre un utilizator specific",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul utilizatorului"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Informații despre utilizator",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "username": { "type": "string" },
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "_count": {
+                      "type": "object",
+                      "properties": {
+                        "recipes": { "type": "integer" },
+                        "followers": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Utilizatorul nu a fost găsit" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/recipes-by-user/{userId}": {
+      "get": {
+        "summary": "Obține rețetele unui utilizator cu paginare",
+        "description": "Returnează rețetele create de un utilizator specific cu suport pentru paginare",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID-ul utilizatorului"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Numărul paginii"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer", "default": 12 },
+            "description": "Numărul de rețete per pagină"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista rețetelor utilizatorului cu informații de paginare",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recipes": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Recipe" },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "user": {
+                                "type": "object",
+                                "properties": {
+                                  "username": { "type": "string" }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "totalPages": { "type": "integer" },
+                    "currentPage": { "type": "integer" },
+                    "totalRecipes": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/spoonacular-recipes": {
+      "get": {
+        "summary": "Obține doar rețetele Spoonacular",
+        "description": "Returnează rețetele fără userId (rețete Spoonacular)",
+        "responses": {
+          "200": {
+            "description": "Lista rețetelor Spoonacular",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Recipe" }
+                }
+              }
+            }
+          },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/followers": {
+      "get": {
+        "summary": "Obține urmăritorii utilizatorului curent",
+        "description": "Returnează lista urmăritorilor utilizatorului autentificat",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista urmăritorilor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "username": { "type": "string" },
+                      "email": { "type": "string" },
+                      "createdAt": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Neautentificat" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/users/following": {
+      "get": {
+        "summary": "Obține utilizatorii urmăriți de utilizatorul curent",
+        "description": "Returnează lista utilizatorilor pe care îi urmărește utilizatorul autentificat",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista utilizatorilor urmăriți",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "username": { "type": "string" },
+                      "email": { "type": "string" },
+                      "createdAt": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Neautentificat" },
+          "500": { "description": "Eroare server" }
+        }
+      }
+    },
+    "/api/ai/generate-recipe-description": {
+  "post": {
+    "summary": "Generează descriere pentru rețetă",
+    "description": "Generează o descriere automată pe baza ingredientelor",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "ingredients": {
+                "oneOf": [
+                  { "type": "string", "description": "Ingrediente separate prin newline" },
+                  { "type": "array", "items": { "type": "string" }, "description": "Array de ingrediente" }
+                ]
+              }
+            },
+            "required": ["ingredients"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Descriere generată cu succes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "400": { "description": "Ingredientele sunt necesare" },
+      "500": { "description": "Eroare la generarea descrierii" }
+    }
+  }
+},
+"/api/ai/generate-cuisine-description": {
+  "post": {
+    "summary": "Generează descriere pentru bucătărie",
+    "description": "Generează o descriere automată pentru o bucătărie",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "cuisineName": { "type": "string" }
+            },
+            "required": ["cuisineName"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Descriere generată cu succes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "400": { "description": "Numele bucătăriei este necesar" },
+      "500": { "description": "Eroare la generarea descrierii" }
+    }
+  }
+},
+"/api/ai/clarifai-food": {
+  "post": {
+    "summary": "Detectează ingrediente în imagine",
+    "description": "Folosește Clarifai pentru a detecta ingrediente dintr-o imagine",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "imageBase64": { "type": "string", "description": "Imaginea encodată în base64" },
+              "image": { "type": "string", "description": "Alternativă pentru imageBase64" }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Ingrediente detectate cu succes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "concepts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": { "type": "string" },
+                          "value": { "type": "number" }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "400": { "description": "Imaginea este necesară" },
+      "500": { "description": "Eroare la apelarea Clarifai API" }
+    }
+  }
+},
+"/api/ai/generate-ai": {
+  "post": {
+    "summary": "Generează meniu sau rețete AI",
+    "description": "Generează un meniu complet sau rețete individuale folosind AI",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "ingredients": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Lista de ingrediente disponibile"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["menu", "recipe"],
+                "description": "Tipul de generare: meniu complet sau rețete"
+              }
+            },
+            "required": ["ingredients", "type"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Conținut generat cu succes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "description": "Răspuns pentru meniu",
+                  "properties": {
+                    "cuisineId": { "type": "integer" },
+                    "cuisineName": { "type": "string" },
+                    "breakfast": {
+                      "type": "object",
+                      "properties": {
+                        "title": { "type": "string" },
+                        "description": { "type": "string" },
+                        "ingredients": { "type": "string" },
+                        "instructions": { "type": "string" },
+                        "prepTime": { "type": "integer" },
+                        "servings": { "type": "integer" },
+                        "cuisineId": { "type": "integer" },
+                        "cuisineName": { "type": "string" },
+                        "image": { "type": "string" }
+                      }
+                    },
+                    "lunch": {
+                      "type": "object",
+                      "properties": {
+                        "title": { "type": "string" },
+                        "description": { "type": "string" },
+                        "ingredients": { "type": "string" },
+                        "instructions": { "type": "string" },
+                        "prepTime": { "type": "integer" },
+                        "servings": { "type": "integer" },
+                        "cuisineId": { "type": "integer" },
+                        "cuisineName": { "type": "string" },
+                        "image": { "type": "string" }
+                      }
+                    },
+                    "dinner": {
+                      "type": "object",
+                      "properties": {
+                        "title": { "type": "string" },
+                        "description": { "type": "string" },
+                        "ingredients": { "type": "string" },
+                        "instructions": { "type": "string" },
+                        "prepTime": { "type": "integer" },
+                        "servings": { "type": "integer" },
+                        "cuisineId": { "type": "integer" },
+                        "cuisineName": { "type": "string" },
+                        "image": { "type": "string" }
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "description": "Răspuns pentru rețete",
+                  "properties": {
+                    "cuisineId": { "type": "integer" },
+                    "cuisineName": { "type": "string" },
+                    "recipes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": { "type": "string" },
+                          "description": { "type": "string" },
+                          "ingredients": { "type": "string" },
+                          "instructions": { "type": "string" },
+                          "prepTime": { "type": "integer" },
+                          "servings": { "type": "integer" },
+                          "cuisineId": { "type": "integer" },
+                          "cuisineName": { "type": "string" },
+                          "image": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "400": { "description": "Date invalide" },
+      "500": { "description": "Eroare la generarea conținutului AI" }
+    }
+  }
+},
+"/api/interactions/favorites/{userId}": {
+  "get": {
+    "summary": "Obține rețetele favorite ale unui utilizator",
+    "description": "Returnează lista rețetelor favorite pentru un utilizator specific",
+    "parameters": [
+      {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID-ul utilizatorului"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Lista rețetelor favorite",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "ingredients": { "type": "string" },
+                  "instructions": { "type": "string" },
+                  "prepTime": { "type": "integer" },
+                  "servings": { "type": "integer" },
+                  "cuisineId": { "type": "integer" },
+                  "image": { "type": "string" },
+                  "userId": { "type": "integer" },
+                  "createdAt": { "type": "string", "format": "date-time" },
+                  "updatedAt": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
           }
         }
       }
     }
-
+  }
+},
+"/api/interactions/favorites/{recipeId}": {
+  "post": {
+    "summary": "Adaugă rețetă la favorite",
+    "description": "Adaugă o rețetă la lista de favorite a utilizatorului autentificat",
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "recipeId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID-ul rețetei"
+      }
+    ],
+    "responses": {
+      "201": {
+        "description": "Rețeta a fost adăugată la favorite",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "200": {
+        "description": "Rețeta este deja la favorite",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Rețeta nu a fost găsită",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare la adăugarea la favorite",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "delete": {
+    "summary": "Șterge rețetă din favorite",
+    "description": "Elimină o rețetă din lista de favorite a utilizatorului autentificat",
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "recipeId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID-ul rețetei"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Rețeta a fost eliminată din favorite",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare la eliminarea din favorite",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/follow/{userId}": {
+  "post": {
+    "summary": "Urmărește un utilizator",
+    "description": "Creează o relație de urmărire cu un alt utilizator și generează o notificare",
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID-ul utilizatorului de urmărit"
+      }
+    ],
+    "responses": {
+      "201": {
+        "description": "Utilizatorul a fost urmărit cu succes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Eroare de validare (nu poți să te urmărești pe tine însuți sau utilizatorul este deja urmărit)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/is-following/{userId}": {
+  "get": {
+    "summary": "Verifică dacă urmărești un utilizator",
+    "description": "Returnează statusul de urmărire pentru un utilizator specific",
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID-ul utilizatorului"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Status de urmărire",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "isFollowing": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/notifications": {
+  "get": {
+    "summary": "Obține notificările utilizatorului",
+    "description": "Returnează ultimele 50 de notificări ale utilizatorului autentificat, ordonate descrescător după data creării",
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "Lista notificărilor",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "userId": { "type": "integer" },
+                  "message": { "type": "string" },
+                  "isRead": { "type": "boolean" },
+                  "createdAt": { "type": "string", "format": "date-time" },
+                  "updatedAt": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/notifications/unread-count": {
+  "get": {
+    "summary": "Obține numărul de notificări necitite",
+    "description": "Returnează numărul total de notificări necitite ale utilizatorului autentificat",
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "Numărul de notificări necitite",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "count": { "type": "integer" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/notifications/mark-read": {
+  "put": {
+    "summary": "Marchează notificările ca citite",
+    "description": "Marchează notificări specifice sau toate notificările ca citite",
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": false,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "notificationIds": {
+                "type": "array",
+                "items": { "type": "integer" },
+                "description": "Array de ID-uri de notificări. Dacă nu este furnizat, toate notificările vor fi marcate ca citite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Notificările au fost marcate ca citite",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/notifications/{id}": {
+  "delete": {
+    "summary": "Șterge o notificare",
+    "description": "Șterge o notificare specifică a utilizatorului autentificat",
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID-ul notificării"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Notificarea a fost ștearsă",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Notificarea nu a fost găsită",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/unfollow/{userId}": {
+  "delete": {
+    "summary": "Anulează urmărirea unui utilizator",
+    "description": "Elimină relația de urmărire cu un alt utilizator",
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID-ul utilizatorului de anulat din urmărire"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Utilizatorul a fost anulat din urmărire cu succes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Nu urmărești acest utilizator",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/followers/count": {
+  "get": {
+    "summary": "Obține numărul de urmăritori ai utilizatorului curent",
+    "description": "Returnează numărul total de urmăritori pentru utilizatorul autentificat",
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "Numărul de urmăritori",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "count": { "type": "integer" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/following/count": {
+  "get": {
+    "summary": "Obține numărul de utilizatori urmăriți de utilizatorul curent",
+    "description": "Returnează numărul total de utilizatori pe care îi urmărește utilizatorul autentificat",
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "Numărul de utilizatori urmăriți",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "count": { "type": "integer" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/{userId}/followers/count": {
+  "get": {
+    "summary": "Obține numărul de urmăritori ai unui utilizator specific",
+    "description": "Returnează numărul total de urmăritori pentru un utilizator specific",
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID-ul utilizatorului"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Numărul de urmăritori",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "count": { "type": "integer" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/interactions/{userId}/following/count": {
+  "get": {
+    "summary": "Obține numărul de utilizatori urmăriți de un utilizator specific",
+    "description": "Returnează numărul total de utilizatori pe care îi urmărește un utilizator specific",
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID-ul utilizatorului"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Numărul de utilizatori urmăriți",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "count": { "type": "integer" }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Eroare server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
   }
 }

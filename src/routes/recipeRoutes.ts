@@ -104,7 +104,6 @@ router.get('/user/:userId', async (req, res) => {
       },
       include: {
         cuisine: true,
-        reviews: true,
         favorites: true,
       },
       orderBy: {
@@ -131,7 +130,6 @@ router.get('/ai/:userId', async (req, res) => {
       },
       include: {
         cuisine: true,
-        reviews: true,
         favorites: true,
       },
       orderBy: {

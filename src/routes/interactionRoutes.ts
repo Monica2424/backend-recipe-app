@@ -80,65 +80,6 @@ router.delete('/favorites/:recipeId', authenticateToken, async (req: Authenticat
   }
 });
 
-// Adaugă sau actualizează review și rating
-router.post('/review/:recipeId', authenticateToken, async (req: AuthenticatedRequest, res) => {
-  const userId = req.user!.userId;
-  const recipeId = parseInt(req.params.recipeId);
-  const { rating, comment } = req.body;
-
-  if (!rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ message: 'Rating must be between 1 and 5' });
-  }
-
-  try {
-    const existingReview = await prisma.review.findFirst({
-      where: { userId, recipeId }
-    });
-
-    if (existingReview) {
-      const updated = await prisma.review.update({
-        where: { id: existingReview.id },
-        data: { rating, comment }
-      });
-      res.status(200).json(updated);
-    } else {
-      const created = await prisma.review.create({
-        data: {
-          userId,
-          recipeId,
-          rating,
-          comment
-        }
-      });
-      res.status(201).json(created);
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Could not save review' });
-  }
-});
-
-// Șterge review
-router.delete('/review/:recipeId', authenticateToken, async (req: AuthenticatedRequest, res) => {
-  const userId = req.user!.userId;
-  const recipeId = parseInt(req.params.recipeId);
-
-  try {
-    await prisma.review.deleteMany({
-      where: {
-        userId,
-        recipeId
-      }
-    });
-
-    res.status(200).json({ message: 'Review deleted' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Could not delete review' });
-  }
-});
-
-
 
 // Follow user
 router.post('/follow/:userId', authenticateToken, async (req: Request, res: Response): Promise<Response> => {

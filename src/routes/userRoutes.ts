@@ -327,11 +327,6 @@ router.delete('/delete-account', authenticateToken, async (req: Request, res: Re
         where: { userId: userId }
       });
 
-      // Delete reviews
-      await prisma.review.deleteMany({
-        where: { userId: userId }
-      });
-
       // Delete notifications
       await prisma.notification.deleteMany({
         where: { userId: userId }
@@ -436,11 +431,6 @@ router.get('/recipes-by-user/:userId', async (req: Request, res: Response): Prom
             username: true
           }
         },
-        _count: {
-          select: {
-            reviews: true
-          }
-        }
       },
       skip: (parseInt(page as string) - 1) * parseInt(limit as string),
       take: parseInt(limit as string),

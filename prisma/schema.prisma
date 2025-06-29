@@ -12,6 +12,10 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "./ERD.svg"
+}
 
 model User {
   id            Int           @id @default(autoincrement())
@@ -22,7 +26,6 @@ model User {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   recipes       Recipe[]
-  reviews       Review[]
   favorites     Favorite[]
   followers     Follow[]      @relation("Followers")
   following     Follow[]      @relation("Following")
@@ -55,23 +58,9 @@ model Recipe {
   user           User?    @relation(fields: [userId], references: [id])
   isAIGenerated  Boolean  @default(false)
   isPrivate      Boolean  @default(false) // rețetele generate pe baza ingredientelor, vizibile doar creatorului
-  reviews        Review[]
   favorites      Favorite[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-}
-
-model Review {
-  id        Int      @id @default(autoincrement())
-  rating    Int      // valoare de la 1 la 5
-  comment   String?
-  userId    Int
-  recipeId  Int
-  user      User     @relation(fields: [userId], references: [id])
-  recipe    Recipe   @relation(fields: [recipeId], references: [id])
-  createdAt DateTime @default(now())
-
-  @@unique([userId, recipeId])
 }
 
 model Favorite {
